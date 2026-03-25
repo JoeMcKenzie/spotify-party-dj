@@ -1,0 +1,5 @@
+IF DB_ID('PartyDJ') IS NULL
+BEGIN
+    CREATE DATABASE PartyDJ;
+END;
+GO
