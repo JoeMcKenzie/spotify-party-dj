@@ -18,7 +18,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to fetch data from SQL Server',
+        error: 'Failed to fetch data from SQL Server'
       },
       { status: 500 }
     );
