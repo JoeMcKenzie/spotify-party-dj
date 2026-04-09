@@ -2,9 +2,8 @@ USE PartyDJ
 GO
 
 CREATE OR ALTER PROCEDURE dbo.CreateUser
-  @FirstName NVARCHAR(50),
-  @LastName NVARCHAR(50),
-  @DisplayName NVARCHAR(50)
+  @Username NVARCHAR(50),
+  @PasswordHash NVARCHAR(255)
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -12,46 +11,39 @@ BEGIN
 
   DECLARE @UserID INT;
 
-  SET @FirstName = LTRIM(RTRIM(@FirstName));
-  SET @LastName = LTRIM(RTRIM(@LastName));
-  SET @DisplayName = LTRIM(RTRIM(@DisplayName));
+  SET @Username = LTRIM(RTRIM(@Username));
+  SET @PasswordHash = LTRIM(RTRIM(@PasswordHash));
 
-  IF @FirstName IS NULL OR @FirstName = ''
+  IF @Username IS NULL OR @Username = ''
   BEGIN
-    RAISERROR ('First name is required.', 16, 1);
+    RAISERROR ('Username is required.', 16, 1);
     RETURN;
   END;
 
-  IF @LastName IS NULL OR @LastName = ''
+  IF @PasswordHash IS NULL OR @PasswordHash = ''
   BEGIN
-    RAISERROR ('Last name is required.', 16, 1);
+    RAISERROR ('Password is required.', 16, 1);
     RETURN;
   END;
 
-  IF @DisplayName IS NULL OR @DisplayName = ''
+  IF EXISTS (SELECT 1 FROM dbo.Users WHERE Username = @Username)
   BEGIN
-    RAISERROR ('Display name is required.', 16, 1);
-    RETURN;
+    RAISERROR ('That username is already taken', 16, 1);
   END;
 
   INSERT INTO dbo.Users (
-    FirstName,
-    LastName,
-    DisplayName
+    Username,
+    PasswordHash
   )
   VALUES (
-    @FirstName,
-    @LastName,
-    @DisplayName
+    @Username,
+    @PasswordHash
   )
 
   SET @UserID = SCOPE_IDENTITY();
 
   SELECT
-    UserID,
-    FirstName,
-    LastName,
-    DisplayName,
+    Username,
     CreatedAt
   FROM dbo.Users
   WHERE UserID = @UserID

@@ -5,12 +5,17 @@ IF OBJECT_ID('dbo.Users', 'U') IS NULL
 BEGIN
   CREATE TABLE dbo.Users (
     UserID INT IDENTITY(1,1) NOT NULL,
+    Email NVARCHAR(255) NOT NULL,
+    Username NVARCHAR(50) NOT NULL,
+    PasswordHash NVARCHAR(255) NOT NULL,
     FirstName NVARCHAR(50) NOT NULL,
     LastName NVARCHAR(50) NOT NULL,
     DisplayName NVARCHAR(50) NULL,
     CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME(),
 
-    CONSTRAINT PK_Users PRIMARY KEY (UserID)
+    CONSTRAINT PK_Users PRIMARY KEY (UserID),
+    CONSTRAINT UQ_Users_Email UNIQUE (Email),
+    CONSTRAINT UQ_Users_Username UNIQUE (Username)
   );
 END;
 GO
