@@ -29,6 +29,7 @@ BEGIN
   IF EXISTS (SELECT 1 FROM dbo.Users WHERE Username = @Username)
   BEGIN
     RAISERROR ('That username is already taken', 16, 1);
+    RETURN;
   END;
 
   INSERT INTO dbo.Users (
@@ -43,6 +44,7 @@ BEGIN
   SET @UserID = SCOPE_IDENTITY();
 
   SELECT
+    UserID,
     Username,
     CreatedAt
   FROM dbo.Users
