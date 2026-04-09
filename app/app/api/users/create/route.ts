@@ -1,4 +1,4 @@
-/*import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getDbPool } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -67,7 +67,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-};  
-*/
+};
 
 
