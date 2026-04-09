@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
     const result = await pool
       .request()
       .input('Username', username)
-      .input('PasswordHash', passwordHash)
       .execute('dbo.GetUserByUsername');
 
     const user = result.recordset[0];

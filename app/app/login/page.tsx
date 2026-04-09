@@ -6,7 +6,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
-  const [createdUser, setLoggedInUser] = useState<any>(null);
+  const [loggedInUser, setLoggedInUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -83,12 +83,12 @@ export default function LoginPage() {
         {message && (
           <p className="mt-4">{message}</p>
         )}
-        {createdUser && (
+        {loggedInUser && (
           <div className="mt-6 border rounded p-4">
             <h2 className="font-bold">Created User</h2>
-            <p>UserID: {createdUser.UserID}</p>
-            <p>Username: {createdUser.Username}</p>
-            <p>CreatedAt: {createdUser.CreatedAt}</p>
+            <p>UserID: {loggedInUser.UserID}</p>
+            <p>Username: {loggedInUser.Username}</p>
+            <p>CreatedAt: {loggedInUser.CreatedAt}</p>
           </div>
         )}
       </div>
