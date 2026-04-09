@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { getDbPool } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     if (message.toLowerCase().includes('already taken')) {
       return NextResponse.json(
         {
-          success: false;
+          success: false,
           error: 'That username is already taken'
         },
         { status: 409 }

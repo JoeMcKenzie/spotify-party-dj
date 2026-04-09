@@ -15,7 +15,7 @@ export default function SignUpPage() {
     setCreatedUser(null);
 
     try {
-      const response = await fetch('/api/users/create', {
+      const response = await fetch('/api/users/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -68,6 +68,7 @@ export default function SignUpPage() {
           <div>
             <label className="block mb-1 font-medium">Password</label>
             <input
+              type="password"
               className="w-full border rounded px-3 py-2"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
