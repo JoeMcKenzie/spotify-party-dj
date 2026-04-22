@@ -1,14 +1,16 @@
 'use client'
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [createdUser, setCreatedUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setMessage('');
@@ -37,6 +39,7 @@ export default function SignUpPage() {
       setMessage('User created successfully');
       setUsername('');
       setPassword('');
+      router.push('/joinSession');
 
     } catch (error) {
       setMessage('Something went wrong');
@@ -53,7 +56,7 @@ export default function SignUpPage() {
         <p className="mt-2 text-sm text-gray-500">
           Create your PartyDJ account.
         </p>
-        
+
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>

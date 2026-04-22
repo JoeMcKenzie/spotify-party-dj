@@ -16,7 +16,10 @@ let poolPromise: Promise<sql.ConnectionPool> | null = null;
 
 export async function getDbPool() {
   if (!poolPromise) {
-    poolPromise = new sql.ConnectionPool(config).connect();
+    poolPromise = new sql.ConnectionPool(config).connect().catch((err) => {
+      poolPromise = null;
+      throw err;
+    });
   }
 
   return poolPromise;

@@ -58,6 +58,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Login API error:', error);
-    return;
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' }, // debugging , if you hit this you probably haven't setup your local db with docker
+      { status: 500 }
+    );
   }
 }

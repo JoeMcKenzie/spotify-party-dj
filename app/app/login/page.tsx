@@ -1,15 +1,17 @@
 'use client'
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loggedInUser, setLoggedInUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setMessage('');
@@ -37,6 +39,7 @@ export default function LoginPage() {
       setMessage('Logged in successfully');
       setUsername('');
       setPassword('');
+      router.push('/joinSession');
     } catch {
       setMessage('Something went wrong');
     } finally {
