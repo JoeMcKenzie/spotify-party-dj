@@ -9,7 +9,7 @@ BEGIN
   SET NOCOUNT ON;
   SET XACT_ABORT ON;
 
-  DECLARE @UserID INT;
+  DECLARE @UserID BIGINT;
 
   SET @Username = LTRIM(RTRIM(@Username));
   SET @PasswordHash = LTRIM(RTRIM(@PasswordHash));
