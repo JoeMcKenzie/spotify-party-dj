@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 
 type Song = {
@@ -10,35 +10,96 @@ type Song = {
   duration: string;
 };
 
-type QueuedSong = Song & { position: number; addedBy: string };
+type QueuedSong = {
+  QueueItemID: number;
+  Position: number;
+  Status: string;
+  SongName: string;
+  ArtistName: string;
+  AlbumName: string;
+  DurationSeconds: number;
+  AddedBy: string;
+};
+
+function formatDuration(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
 export default function JamPage() {
   const { code } = useParams<{ code: string }>();
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Song[]>([]);
   const [queue, setQueue] = useState<QueuedSong[]>([]);
-  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [currentSong, setCurrentSong] = useState<QueuedSong | null>(null);
+  const [adding, setAdding] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const userRef = useRef<{ UserID: number; Username: string } | null>(null);
 
-  // Placeholder: replace with real Spotify search
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) userRef.current = JSON.parse(stored);
+  }, []);
+
+  // Poll queue every 3 seconds
+  useEffect(() => {
+    async function fetchQueue() {
+      try {
+        const res = await fetch(`/api/sessions/${code}/queue`);
+        const json = await res.json();
+        if (json.success) {
+          const active = json.data.filter((q: QueuedSong) => q.Status !== 'Played');
+          setCurrentSong(active.find((q: QueuedSong) => q.Status === 'Playing') ?? null);
+          setQueue(active.filter((q: QueuedSong) => q.Status !== 'Playing'));
+        }
+      } catch {}
+    }
+
+    fetchQueue();
+    const interval = setInterval(fetchQueue, 3000);
+    return () => clearInterval(interval);
+  }, [code]);
+
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
     setSearch(e.target.value);
+    setError('');
     if (e.target.value.trim()) {
+      // Placeholder — replace with Spotify search
       setResults([
-        { id: '1', name: 'Example Song', artist: 'Example Artist', album: 'Example Album', duration: '3:45' }, // these are examples use spotify api to pop results later
-        { id: '2', name: 'Another Track', artist: 'Another Artist', album: 'Another Album', duration: '4:12' }, // TPD spotify api stuff
+        { id: '1', name: 'Example Song', artist: 'Example Artist', album: 'Example Album', duration: '3:45' },
+        { id: '2', name: 'Another Track', artist: 'Another Artist', album: 'Another Album', duration: '4:12' },
       ]);
     } else {
       setResults([]);
     }
   }
 
-  function addToQueue(song: Song) {
-    setQueue((prev) => [
-      ...prev,
-      { ...song, position: prev.length + 1, addedBy: 'You' },
-    ]);
-    setSearch('');
-    setResults([]);
+  async function addToQueue(song: Song) {
+    if (!userRef.current) {
+      setError('You must be logged in to add songs.');
+      return;
+    }
+    setAdding(song.id);
+    setError('');
+    try {
+      const res = await fetch(`/api/sessions/${code}/queue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ song, userID: userRef.current.UserID }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || 'Failed to add song');
+        return;
+      }
+      setSearch('');
+      setResults([]);
+    } catch {
+      setError('Something went wrong.');
+    } finally {
+      setAdding(null);
+    }
   }
 
   return (
@@ -57,6 +118,8 @@ export default function JamPage() {
         </div>
       </div>
 
+      {error && <p className="px-6 py-2 text-xs text-red-400">{error}</p>}
+
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
 
@@ -70,9 +133,10 @@ export default function JamPage() {
               <p className="px-4 py-3 text-xs text-white/30">No songs queued yet</p>
             ) : (
               queue.map((song) => (
-                <div key={song.id} className="px-4 py-3 border-b border-white/5 hover:bg-white/5">
-                  <p className="text-sm font-medium truncate">{song.name}</p>
-                  <p className="text-xs text-white/50 truncate">{song.artist}</p>
+                <div key={song.QueueItemID} className="px-4 py-3 border-b border-white/5 hover:bg-white/5">
+                  <p className="text-sm font-medium truncate">{song.SongName}</p>
+                  <p className="text-xs text-white/50 truncate">{song.ArtistName}</p>
+                  <p className="text-xs text-white/30 truncate">by {song.AddedBy}</p>
                 </div>
               ))
             )}
@@ -93,7 +157,9 @@ export default function JamPage() {
                     <p className="text-sm font-medium">{song.name}</p>
                     <p className="text-xs text-white/50">{song.artist} &mdash; {song.album}</p>
                   </div>
-                  <span className="text-xs text-white/40">{song.duration}</span>
+                  <span className="text-xs text-white/40">
+                    {adding === song.id ? 'Adding...' : song.duration}
+                  </span>
                 </div>
               ))}
             </div>
@@ -104,11 +170,11 @@ export default function JamPage() {
       {/* Bottom bar — now playing */}
       <div className="border-t border-white/10 px-6 py-4">
         {currentSong ? (
-          <div className="flex items-center gap-4">
-            <div>
-              <p className="text-sm font-semibold">{currentSong.name}</p>
-              <p className="text-xs text-white/50">{currentSong.artist} &mdash; {currentSong.duration}</p>
-            </div>
+          <div>
+            <p className="text-sm font-semibold">{currentSong.SongName}</p>
+            <p className="text-xs text-white/50">
+              {currentSong.ArtistName} &mdash; {formatDuration(currentSong.DurationSeconds)}
+            </p>
           </div>
         ) : (
           <p className="text-xs text-white/30 text-center">No song currently playing</p>

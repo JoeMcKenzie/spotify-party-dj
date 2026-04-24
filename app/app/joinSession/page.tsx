@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 export default function JoinSessionPage() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<'join' | 'host' | null>(null);
   const router = useRouter();
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -14,7 +14,7 @@ export default function JoinSessionPage() {
   }
 
   async function handleJoin() {
-    setLoading(true);
+    setLoading('join');
     setError('');
     try {
       const res = await fetch('/api/sessions/join', {
@@ -31,9 +31,38 @@ export default function JoinSessionPage() {
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   }
+
+  async function handleHost() {
+    setLoading('host');
+    setError('');
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (!user?.UserID) {
+        setError('You must be logged in to host a session.');
+        return;
+      }
+      const res = await fetch('/api/sessions/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionCode: code, userID: user.UserID }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || 'Could not create session');
+        return;
+      }
+      router.push(`/Jam/${json.data.SessionCode}`);
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  const ready = code.length === 5;
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-white text-black">
@@ -44,16 +73,25 @@ export default function JoinSessionPage() {
         onChange={handleChange}
         maxLength={5}
         placeholder="XXXXX"
-        onKeyDown={(e) => e.key === 'Enter' && code.length === 5 && handleJoin()}
+        onKeyDown={(e) => e.key === 'Enter' && ready && handleJoin()}
       />
       {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-      <button
-        onClick={handleJoin}
-        disabled={code.length < 5 || loading}
-        className="mt-4 rounded-lg bg-black text-white py-3 px-8 text-sm font-medium hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        {loading ? 'Joining...' : 'Join'}
-      </button>
+      <div className="mt-4 flex gap-3">
+        <button
+          onClick={handleJoin}
+          disabled={!ready || loading !== null}
+          className="rounded-lg bg-black text-white py-3 px-8 text-sm font-medium hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {loading === 'join' ? 'Joining...' : 'Join'}
+        </button>
+        <button
+          onClick={handleHost}
+          disabled={!ready || loading !== null}
+          className="rounded-lg border border-black text-black py-3 px-8 text-sm font-medium hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {loading === 'host' ? 'Creating...' : 'Host'}
+        </button>
+      </div>
     </main>
   );
 }

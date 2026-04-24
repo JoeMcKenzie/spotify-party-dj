@@ -36,6 +36,7 @@ export default function LoginPage() {
       }
       
       setLoggedInUser(result.data);
+      localStorage.setItem('user', JSON.stringify(result.data));
       setMessage('Logged in successfully');
       setUsername('');
       setPassword('');
