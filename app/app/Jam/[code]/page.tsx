@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 
 type Song = {
   id: string;
-  spotifyUrl: string;
+  spotifyUri: string;
   name: string;
   artist: string;
   album: string;
@@ -58,7 +58,7 @@ export default function JamPage() {
     
     const timeout = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(value)}`);
+        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`);
         const json = await res.json();
 
         if (!res.ok || !json.success) {

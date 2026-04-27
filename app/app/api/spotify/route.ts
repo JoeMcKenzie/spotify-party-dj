@@ -4,7 +4,7 @@ let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
 
 async function getSpotifyAccessToken() {
-  const noww = Date.now()
+  const now = Date.now()
 
   if (cachedToken && now < tokenExpiresAt) {
     return cachedToken;
@@ -17,7 +17,7 @@ async function getSpotifyAccessToken() {
     throw new Error('Missing Spotify credentials');
   }
 
-  const basicAuth = Buffer.from(`${clientId}:${clientID}:${clientSecret}`).toString('base64');
+  const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.messagee || 'Failed to search Spotify',
+        error: error.message || 'Failed to search Spotify',
       },
       { status: 500 }
     );
