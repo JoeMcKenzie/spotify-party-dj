@@ -4,10 +4,13 @@ import { useParams } from 'next/navigation';
 
 type Song = {
   id: string;
+  spotifyUrl: string;
   name: string;
   artist: string;
   album: string;
   duration: string;
+  durationSeconds: number;
+  imageUrl?: string | null;
 };
 
 type QueuedSong = {
@@ -45,6 +48,32 @@ export default function JamPage() {
     if (stored) userRef.current = JSON.parse(stored);
   }, []);
 
+  useEffect(() => {
+    const query = search.trim();
+    
+    if (!query) {
+      setResults([]);
+      return;
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(value)}`);
+        const json = await res.json();
+
+        if (!res.ok || !json.success) {
+          setError(json.error || 'Failed to search Spotify');
+          return;
+        }
+
+        setResults(json.data);
+      } catch {
+        setError('Something went wrong while searching Spotify.');
+      }
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
   // Poll queue every 3 seconds
   useEffect(() => {
     async function fetchQueue() {
@@ -66,17 +95,9 @@ export default function JamPage() {
   }, [code]);
 
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearch(e.target.value);
+    const value = e.target.value;
+    setSearch(value);
     setError('');
-    if (e.target.value.trim()) {
-      // Placeholder — replace with Spotify search API Results later
-      setResults([
-        { id: '1', name: 'Example Song', artist: 'Example Artist', album: 'Example Album', duration: '3:45' },
-        { id: '2', name: 'Another Track', artist: 'Another Artist', album: 'Another Album', duration: '4:12' },
-      ]);
-    } else {
-      setResults([]);
-    }
   }
 
   async function vote(queueItemID: number) {
