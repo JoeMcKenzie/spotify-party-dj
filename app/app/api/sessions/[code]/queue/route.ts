@@ -1,32 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   try {
     const { code } = await params;
+    const userID = req.nextUrl.searchParams.get('userID');
     const pool = await getDbPool();
 
     const result = await pool
       .request()
       .input('SessionCode', code.toUpperCase())
+      .input('UserID', userID ? parseInt(userID) : null)
       .query(`
         SELECT
           qi.QueueItemID,
           qi.Position,
           qi.Status,
+          qi.QueuedAt,
           s.SongName,
           s.DurationSeconds,
           s.AlbumName,
           a.ArtistName,
-          u.Username AS AddedBy
+          u.Username AS AddedBy,
+          COUNT(v.VoteID) AS VoteCount,
+          MAX(CASE WHEN v.UserID = @UserID THEN 1 ELSE 0 END) AS UserHasVoted
         FROM QueueItems qi
         JOIN Songs s ON s.SongID = qi.SongID
         JOIN Artists a ON a.ArtistID = s.ArtistID
         JOIN Users u ON u.UserID = qi.AddedByUserID
+        LEFT JOIN Votes v ON v.QueueItemID = qi.QueueItemID
         WHERE qi.SessionID = (
           SELECT SessionID FROM Sessions WHERE SessionCode = @SessionCode
         )
-        ORDER BY qi.Position ASC
+        GROUP BY
+          qi.QueueItemID, qi.Position, qi.Status, qi.QueuedAt,
+          s.SongName, s.DurationSeconds, s.AlbumName,
+          a.ArtistName, u.Username
+        ORDER BY VoteCount DESC, qi.QueuedAt ASC
       `);
 
     return NextResponse.json({ success: true, data: result.recordset });
@@ -66,7 +76,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
       return NextResponse.json({ success: false, error: 'Session not found or has ended' }, { status: 404 });
     }
 
-    // Upsert artist
     await pool.request().input('ArtistName', song.artist).query(`
       IF NOT EXISTS (SELECT 1 FROM Artists WHERE ArtistName = @ArtistName)
         INSERT INTO Artists (ArtistName) VALUES (@ArtistName)
@@ -77,7 +86,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
       .query(`SELECT ArtistID FROM Artists WHERE ArtistName = @ArtistName`);
     const artistID = artistResult.recordset[0].ArtistID;
 
-    // Upsert song
     await pool.request()
       .input('SongName', song.name)
       .input('ArtistID', artistID)
@@ -94,7 +102,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
       .query(`SELECT SongID FROM Songs WHERE SongName = @SongName AND ArtistID = @ArtistID`);
     const songID = songResult.recordset[0].SongID;
 
-    // Get next position
     const posResult = await pool.request()
       .input('SessionID', session.SessionID)
       .query(`SELECT ISNULL(MAX(Position), 0) + 1 AS NextPos FROM QueueItems WHERE SessionID = @SessionID`);

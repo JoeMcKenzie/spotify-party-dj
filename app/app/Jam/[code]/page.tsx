@@ -19,6 +19,8 @@ type QueuedSong = {
   AlbumName: string;
   DurationSeconds: number;
   AddedBy: string;
+  VoteCount: number;
+  UserHasVoted: number;
 };
 
 function formatDuration(seconds: number) {
@@ -34,6 +36,7 @@ export default function JamPage() {
   const [queue, setQueue] = useState<QueuedSong[]>([]);
   const [currentSong, setCurrentSong] = useState<QueuedSong | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
+  const [voting, setVoting] = useState<number | null>(null);
   const [error, setError] = useState('');
   const userRef = useRef<{ UserID: number; Username: string } | null>(null);
 
@@ -46,7 +49,8 @@ export default function JamPage() {
   useEffect(() => {
     async function fetchQueue() {
       try {
-        const res = await fetch(`/api/sessions/${code}/queue`);
+        const userID = userRef.current?.UserID;
+        const res = await fetch(`/api/sessions/${code}/queue${userID ? `?userID=${userID}` : ''}`);
         const json = await res.json();
         if (json.success) {
           const active = json.data.filter((q: QueuedSong) => q.Status !== 'Played');
@@ -65,13 +69,35 @@ export default function JamPage() {
     setSearch(e.target.value);
     setError('');
     if (e.target.value.trim()) {
-      // Placeholder — replace with Spotify search
+      // Placeholder — replace with Spotify search API Results later
       setResults([
         { id: '1', name: 'Example Song', artist: 'Example Artist', album: 'Example Album', duration: '3:45' },
         { id: '2', name: 'Another Track', artist: 'Another Artist', album: 'Another Album', duration: '4:12' },
       ]);
     } else {
       setResults([]);
+    }
+  }
+
+  async function vote(queueItemID: number) {
+    if (!userRef.current) {
+      setError('You must be logged in to vote.');
+      return;
+    }
+    setVoting(queueItemID);
+    setError('');
+    try {
+      const res = await fetch(`/api/sessions/${code}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queueItemID, userID: userRef.current.UserID }),
+      });
+      const json = await res.json();
+      if (!res.ok) setError(json.error || 'Failed to vote');
+    } catch {
+      setError('Something went wrong.');
+    } finally {
+      setVoting(null);
     }
   }
 
@@ -105,7 +131,7 @@ export default function JamPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
 
-      {/* Top bar */}
+      {}
       <div className="flex items-center gap-4 px-6 py-4 border-b border-white/10">
         <input
           className="flex-1 bg-transparent border border-white/30 rounded px-4 py-2 text-sm placeholder-white/40 focus:outline-none focus:border-white/60"
@@ -120,10 +146,10 @@ export default function JamPage() {
 
       {error && <p className="px-6 py-2 text-xs text-red-400">{error}</p>}
 
-      {/* Main content */}
+      {}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Left sidebar — queue */}
+        {}
         <div className="w-56 border-r border-white/10 flex flex-col">
           <p className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-white/40">
             Queue
@@ -133,17 +159,27 @@ export default function JamPage() {
               <p className="px-4 py-3 text-xs text-white/30">No songs queued yet</p>
             ) : (
               queue.map((song) => (
-                <div key={song.QueueItemID} className="px-4 py-3 border-b border-white/5 hover:bg-white/5">
-                  <p className="text-sm font-medium truncate">{song.SongName}</p>
-                  <p className="text-xs text-white/50 truncate">{song.ArtistName}</p>
-                  <p className="text-xs text-white/30 truncate">by {song.AddedBy}</p>
+                <div key={song.QueueItemID} className="flex items-center gap-2 px-4 py-3 border-b border-white/5 hover:bg-white/5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{song.SongName}</p>
+                    <p className="text-xs text-white/50 truncate">{song.ArtistName}</p>
+                    <p className="text-xs text-white/30 truncate">by {song.AddedBy}</p>
+                  </div>
+                  <button
+                    onClick={() => vote(song.QueueItemID)}
+                    disabled={!!song.UserHasVoted || voting === song.QueueItemID}
+                    className="flex flex-col items-center text-xs shrink-0 disabled:opacity-40 disabled:cursor-not-allowed hover:text-green-400 transition"
+                  >
+                    <span>{voting === song.QueueItemID ? '…' : '▲'}</span>
+                    <span>{song.VoteCount}</span>
+                  </button>
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* Center — search results */}
+        {}
         <div className="flex-1 flex flex-col overflow-hidden">
           {results.length > 0 && (
             <div className="border border-white/10 m-6 rounded overflow-hidden">
@@ -167,7 +203,7 @@ export default function JamPage() {
         </div>
       </div>
 
-      {/* Bottom bar — now playing */}
+      {}
       <div className="border-t border-white/10 px-6 py-4">
         {currentSong ? (
           <div>
