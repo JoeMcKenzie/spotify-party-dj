@@ -9,5 +9,5 @@ export default async function JoinSessionPage() {
     redirect('/login');
   }
 
-  return <JoinSessionClient />;
+  return <JoinSessionClient username={user.Username} />;
 }
