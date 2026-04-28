@@ -52,50 +52,62 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
     const body = await req.json();
     const { song, userID } = body;
 
-    if (!song?.name || !song?.artist) {
-      return NextResponse.json({ success: false, error: 'Song name and artist are required' }, { status: 400 });
+    if (!song?.id || !song?.name || !song?.artist) {
+      return NextResponse.json({ success: false, error: 'Spotify track ID, song name, and artist are required' }, { status: 400 });
     }
     if (!userID) {
       return NextResponse.json({ success: false, error: 'You must be logged in to add songs' }, { status: 401 });
     }
 
-    const durationSeconds = song.duration
-      ? song.duration.split(':').reduce((acc: number, val: string, i: number, arr: string[]) =>
-          i === arr.length - 1 ? acc + parseInt(val) : acc + parseInt(val) * 60, 0)
-      : 0;
+    const durationSeconds = Number(song.durationSeconds) || 1;
 
     const pool = await getDbPool();
 
     const sessionResult = await pool
       .request()
       .input('SessionCode', code.toUpperCase())
-      .query(`SELECT SessionID FROM Sessions WHERE SessionCode = @SessionCode AND Status IN ('Pending', 'Active')`);
+      .query(`SELECT SessionID FROM Sessions WHERE SessionCode = @SessionCode AND Status IN ('Pending', 'Active', 'Paused')`);
 
     const session = sessionResult.recordset[0];
+
     if (!session) {
       return NextResponse.json({ success: false, error: 'Session not found or has ended' }, { status: 404 });
     }
 
-    await pool.request().input('ArtistName', song.artist).query(`
+    await pool
+      .request()
+      .input('ArtistName', song.artist)
+      .query(`
       IF NOT EXISTS (SELECT 1 FROM Artists WHERE ArtistName = @ArtistName)
         INSERT INTO Artists (ArtistName) VALUES (@ArtistName)
-    `);
+      `);
+
     const artistResult = await pool
       .request()
       .input('ArtistName', song.artist)
       .query(`SELECT ArtistID FROM Artists WHERE ArtistName = @ArtistName`);
-    const artistID = artistResult.recordset[0].ArtistID;
+
+    const artistID = artistResult.recordset[0]?.ArtistID;
+
+    if (!artistID) {
+      return NextResponse.json(
+        { success: false, error: 'Could not create or find artist' },
+        { status: 500 }
+      );
+    }
 
     await pool.request()
+      .input('SpotifyTrackID', song.id)
       .input('SongName', song.name)
       .input('ArtistID', artistID)
       .input('AlbumName', song.album || null)
-      .input('DurationSeconds', durationSeconds || 1)
+      .input('DurationSeconds', durationSeconds)
       .query(`
-        IF NOT EXISTS (SELECT 1 FROM Songs WHERE SongName = @SongName AND ArtistID = @ArtistID)
-          INSERT INTO Songs (SongName, ArtistID, AlbumName, DurationSeconds)
-          VALUES (@SongName, @ArtistID, @AlbumName, @DurationSeconds)
+        IF NOT EXISTS (SELECT 1 FROM Songs WHERE SpotifyTrackID = @SpotifyTrackID)
+          INSERT INTO Songs (SpotifyTrackID, SongName, ArtistID, AlbumName, DurationSeconds)
+          VALUES (@SpotifyTrackID, @SongName, @ArtistID, @AlbumName, @DurationSeconds)
       `);
+
     const songResult = await pool.request()
       .input('SongName', song.name)
       .input('ArtistID', artistID)

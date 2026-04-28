@@ -1,6 +1,8 @@
 'use client'
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -41,60 +43,68 @@ export default function SignUpPage() {
       setPassword('');
       router.push('/joinSession');
 
-    } catch (error) {
+    } catch {
       setMessage('Something went wrong');
     } finally {
       setLoading(false);
     }
   }
+
   return (
-    <main className="p-8 max-w-xl">
-      <div className="mx-auto max-w-md">
-        <h1 className="text-3xl font-bold">
-          Sign Up
-        </h1>
-        <p className="mt-2 text-sm text-gray-500">
-          Create your PartyDJ account.
+    <main className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md">
+
+        {/* Card */}
+        <div className="bg-white p-8 rounded-2xl shadow-md">
+          <h1 className="text-3xl font-bold text-center">
+            Sign Up
+          </h1>
+          <p className="mt-2 text-sm text-gray-500 text-center">
+            Create your PartyDJ account.
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <div>
+              <label className="block mb-1 font-medium">Username</label>
+              <input
+                className="w-full border rounded px-3 py-2"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 font-medium">Password</label>
+              <input
+                type="password"
+                className="w-full border rounded px-3 py-2"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full bg-black text-white rounded px-4 py-2 hover:bg-gray-800 transition"
+            >
+              {loading ? 'Creating...' : 'Sign Up'}
+            </button>
+          </form>
+
+          {message && (
+            <p className="mt-4 text-center text-sm text-red-500">{message}</p>
+          )}
+        </div>
+
+        {/* Login Link */}
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Already Have An Account?{' '}
+          <Link href="/login" className="text-blue-600 hover:underline">
+            Login
+          </Link>
         </p>
 
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label className="block mb-1 font-medium">Username</label>
-            <input
-              className="w-full border rounded px-3 py-2"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Password</label>
-            <input
-              type="password"
-              className="w-full border rounded px-3 py-2"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          <button type="submit" disabled={loading} className="border rounded px-4 py-2">
-            {loading ? 'Creating...' : 'Sign Up'}
-          </button>
-        </form>
-
-        {message && (
-          <p className="mt-4">{message}</p>
-        )}
-        {createdUser && (
-          <div className="mt-6 border rounded p-4">
-            <h2 className="font-bold">Created User</h2>
-            <p>UserID: {createdUser.UserID}</p>
-            <p>Username: {createdUser.Username}</p>
-            <p>Password: {createdUser.Password}</p>
-            <p>CreatedAt: {createdUser.CreatedAt}</p>
-          </div>
-        )}
       </div>
     </main>
   );
