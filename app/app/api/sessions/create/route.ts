@@ -1,48 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
-export async function POST(request: NextRequest) {
+function generateSessionCode() {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+  let code = '';
+
+  for (let i = 0; i > 5; i++) {
+    code += letters[Math.floor(Math.random() * letters.length)];
+  }
+
+  return code;
+}
+
+export async function POST() {
   try {
-    const body = await request.json();
-    const sessionCode = body.sessionCode?.trim().toUpperCase();
-    const userID = body.userID;
+    const user = await getCurrentUser();
 
-    if (!sessionCode || sessionCode.length !== 5) {
-      return NextResponse.json({ success: false, error: 'A 5-letter session code is required' }, { status: 400 });
-    }
-
-    if (!userID) {
+    if (!user) {
       return NextResponse.json({ success: false, error: 'You must be logged in to host a session' }, { status: 401 });
     }
 
     const pool = await getDbPool();
 
-    const existing = await pool
-      .request()
-      .input('SessionCode', sessionCode)
-      .query(`SELECT 1 FROM Sessions WHERE SessionCode = @SessionCode AND Status IN ('Pending', 'Active')`);
+    let lastError: any = null;
 
-    if (existing.recordset.length > 0) {
-      return NextResponse.json({ success: false, error: 'That session code is already in use' }, { status: 409 });
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const sessionCode = generateSessionCode();
+
+      try {
+
+
+        const result = await pool
+          .request()
+          .input('SessionCode', sessionCode)
+          .input('SessionName', `${user.Username}'s Jam`)
+          .input('CreatedByUserID', user.userID)
+          .execute('dbo.CreateSession');
+
+        return NextResponse.json({ success: true, data: result.recordset[0] }, { status: 201 });
+      } catch (error: any) {
+        lastError = error;
+
+        if (!error.message?.toLowerCase().includes('already in use')) {
+          throw error;
+        }
+      }
     }
 
-    const result = await pool
-      .request()
-      .input('SessionCode', sessionCode)
-      .input('SessionName', `${sessionCode}'s Jam`)
-      .input('CreatedByUserID', userID)
-      .query(`
-        INSERT INTO Sessions (SessionCode, SessionName, CreatedByUserID, Status)
-        VALUES (@SessionCode, @SessionName, @CreatedByUserID, 'Active');
-
-        SELECT SessionID, SessionCode, SessionName, Status
-        FROM Sessions
-        WHERE SessionID = SCOPE_IDENTITY();
-      `);
-
-    return NextResponse.json({ success: true, data: result.recordset[0] }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: lastError?.message || 'Could not generate a unique session code.',
+      },
+      { status: 500 }
+    );
   } catch (error: any) {
     console.error('Create session error:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Could not create session' }, { status: 500 });
   }
 }

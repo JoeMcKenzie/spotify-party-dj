@@ -52,8 +52,8 @@ export default function JoinSessionClient({ username }: JoinSessionClientProps) 
       const res = await fetch('/api/sessions/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionCode: code }),
       });
+
       const json = await res.json();
 
       if (!res.ok) {
@@ -127,8 +127,8 @@ export default function JoinSessionClient({ username }: JoinSessionClientProps) 
 
               <button
                 onClick={handleHost}
-                disabled={!ready || loading !== null}
-                className="mt-auto rounded-lg border border-black text-black py-3 text-sm font-medium hover:bg-gray-100 transition"
+                disabled={loading !== null}
+                className="mt-auto rounded-lg border border-black text-black py-3 text-sm font-medium hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                 {loading === 'host' ? 'Creating...' : 'Host Session'}
               </button>
