@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getDbPool } from '@/lib/db';
+import {
+  createSessionToken,
+  hashSessionToken,
+  SESSION_COOKIE_NAME,
+} from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {   
@@ -20,6 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = await getDbPool();
+
     const result = await pool
       .request()
       .input('Username', username)
@@ -48,14 +54,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
+    const sessionToken = createSessionToken();
+    const sessionTokenHash = hashSessionToken(sessionToken);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await pool
+      .request()
+      .input('UserID', user.UserID)
+      .input('SessionTokenHash', sessionTokenHash)
+      .input('ExpiresAt', expiresAt)
+      .execute('dbo.CreateUserSession');
+
+    const response = NextResponse.json({
       success: true,
       data: {
         UserID: user.UserID,
         Username: user.Username,
-        CreatedAt: user.CreatedAt,
-      },
+      }
     });
+
+    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      expires: expiresAt,
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Login API error:', error);
     return NextResponse.json(

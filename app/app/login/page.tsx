@@ -9,14 +9,12 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
-  const [loggedInUser, setLoggedInUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-    setLoggedInUser(null);
 
     try {
       const response = await fetch('/api/users/login', {
@@ -35,12 +33,7 @@ export default function LoginPage() {
         setMessage(result.error || 'Failed to log in');
         return;
       }
-      
-      setLoggedInUser(result.data);
-      localStorage.setItem('user', JSON.stringify(result.data));
-      setMessage('Logged in successfully');
-      setUsername('');
-      setPassword('');
+
       router.push('/joinSession');
     } catch {
       setMessage('Something went wrong');

@@ -9,7 +9,7 @@ BEGIN
   SET NOCOUNT ON;
   SET XACT_ABORT ON;
 
-  DECLARE @UserID BIGINT;
+  DECLARE @UserID INT;
 
   SET @Username = LTRIM(RTRIM(@Username));
   SET @PasswordHash = LTRIM(RTRIM(@PasswordHash));
@@ -39,7 +39,7 @@ BEGIN
   VALUES (
     @Username,
     @PasswordHash
-  )
+  );
 
   SET @UserID = SCOPE_IDENTITY();
 
@@ -48,6 +48,6 @@ BEGIN
     Username,
     CreatedAt
   FROM dbo.Users
-  WHERE UserID = @UserID
+  WHERE UserID = @UserID;
 END;
 GO

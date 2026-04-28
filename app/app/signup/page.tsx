@@ -9,14 +9,13 @@ export default function SignUpPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
-  const [createdUser, setCreatedUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     setLoading(true);
     setMessage('');
-    setCreatedUser(null);
 
     try {
       const response = await fetch('/api/users/signup', {
@@ -37,12 +36,7 @@ export default function SignUpPage() {
         return;
       }
 
-      setCreatedUser(result.data);
-      setMessage('User created successfully');
-      setUsername('');
-      setPassword('');
-      router.push('/joinSession');
-
+      router.push('/login');
     } catch {
       setMessage('Something went wrong');
     } finally {
