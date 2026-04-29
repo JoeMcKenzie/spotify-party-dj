@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   try {
     const { code } = await params;
-    const userID = req.nextUrl.searchParams.get('userID');
+    const user = await getCurrentUser();
     const pool = await getDbPool();
 
     const result = await pool
       .request()
       .input('SessionCode', code.toUpperCase())
-      .input('UserID', userID ? parseInt(userID) : null)
+      .input('UserID', user?.UserID ?? null)
       .query(`
         SELECT
           qi.QueueItemID,
@@ -49,18 +50,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
 export async function POST(req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   try {
     const { code } = await params;
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'You must be logged in to add songs.' }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { song, userID } = body;
+    const { song } = body;
 
     if (!song?.id || !song?.name || !song?.artist) {
       return NextResponse.json({ success: false, error: 'Spotify track ID, song name, and artist are required' }, { status: 400 });
     }
-    if (!userID) {
-      return NextResponse.json({ success: false, error: 'You must be logged in to add songs' }, { status: 401 });
-    }
 
     const durationSeconds = Number(song.durationSeconds) || 1;
-
     const pool = await getDbPool();
 
     const sessionResult = await pool
@@ -112,7 +115,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
       .input('SongName', song.name)
       .input('ArtistID', artistID)
       .query(`SELECT SongID FROM Songs WHERE SongName = @SongName AND ArtistID = @ArtistID`);
+
     const songID = songResult.recordset[0].SongID;
+
+    if (!songID) {
+      return NextResponse.json(
+        { success: false, error: 'Could not create or find song' },
+        { status: 500 }
+      );
+    }
 
     const posResult = await pool.request()
       .input('SessionID', session.SessionID)
