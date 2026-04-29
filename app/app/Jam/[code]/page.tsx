@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 
 type Song = {
@@ -41,12 +41,6 @@ export default function JamPage() {
   const [adding, setAdding] = useState<string | null>(null);
   const [voting, setVoting] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const userRef = useRef<{ UserID: number; Username: string } | null>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) userRef.current = JSON.parse(stored);
-  }, []);
 
   useEffect(() => {
     const query = search.trim();
@@ -78,8 +72,7 @@ export default function JamPage() {
   useEffect(() => {
     async function fetchQueue() {
       try {
-        const userID = userRef.current?.UserID;
-        const res = await fetch(`/api/sessions/${code}/queue${userID ? `?userID=${userID}` : ''}`);
+        const res = await fetch(`/api/sessions/${code}/queue`);
         const json = await res.json();
         if (json.success) {
           const active = json.data.filter((q: QueuedSong) => q.Status !== 'Played');
@@ -101,20 +94,21 @@ export default function JamPage() {
   }
 
   async function vote(queueItemID: number) {
-    if (!userRef.current) {
-      setError('You must be logged in to vote.');
-      return;
-    }
     setVoting(queueItemID);
     setError('');
+
     try {
       const res = await fetch(`/api/sessions/${code}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ queueItemID, userID: userRef.current.UserID }),
+        body: JSON.stringify({ queueItemID }),
       });
+
       const json = await res.json();
-      if (!res.ok) setError(json.error || 'Failed to vote');
+
+      if (!res.ok) {
+        setError(json.error || 'Failed to vote');
+      }
     } catch {
       setError('Something went wrong.');
     } finally {
@@ -123,23 +117,22 @@ export default function JamPage() {
   }
 
   async function addToQueue(song: Song) {
-    if (!userRef.current) {
-      setError('You must be logged in to add songs.');
-      return;
-    }
     setAdding(song.id);
     setError('');
+
     try {
       const res = await fetch(`/api/sessions/${code}/queue`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ song, userID: userRef.current.UserID }),
+        body: JSON.stringify({ song }),
       });
+
       const json = await res.json();
       if (!res.ok) {
         setError(json.error || 'Failed to add song');
         return;
       }
+
       setSearch('');
       setResults([]);
     } catch {

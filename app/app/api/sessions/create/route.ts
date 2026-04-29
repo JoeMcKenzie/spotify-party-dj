@@ -6,7 +6,7 @@ function generateSessionCode() {
   const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
   let code = '';
 
-  for (let i = 0; i > 5; i++) {
+  for (let i = 0; i < 5; i++) {
     code += letters[Math.floor(Math.random() * letters.length)];
   }
 
@@ -35,7 +35,7 @@ export async function POST() {
           .request()
           .input('SessionCode', sessionCode)
           .input('SessionName', `${user.Username}'s Jam`)
-          .input('CreatedByUserID', user.userID)
+          .input('CreatedByUserID', user.UserID)
           .execute('dbo.CreateSession');
 
         return NextResponse.json({ success: true, data: result.recordset[0] }, { status: 201 });
