@@ -91,7 +91,7 @@ export default function JamPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/sessions/${code}/play-test', {
+      const res = await fetch(`/api/sessions/${code}/play-test`, {
         method: 'POST',
       });
 

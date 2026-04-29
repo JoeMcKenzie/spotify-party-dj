@@ -121,7 +121,7 @@ export async function POST(
   
     await pool
       .request()
-      .input('QueueItemID', topSong.QueueItemId)
+      .input('QueueItemID', topSong.QueueItemID)
       .query(`
         UPDATE dbo.QueueItems
         SET 
