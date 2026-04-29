@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   try {
     const { code } = await params;
-    const body = await req.json();
-    const { queueItemID, userID } = body;
+    const user = await getCurrentUser();
 
-    if (!queueItemID || !userID) {
-      return NextResponse.json({ success: false, error: 'queueItemID and userID are required' }, { status: 400 });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'You must be logged in to vote.' },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json();
+    const { queueItemID } = body;
+
+    if (!queueItemID) {
+      return NextResponse.json(
+        { success: false, error: 'queueItemID is required' },
+        { status: 400 }
+      );
     }
 
     const pool = await getDbPool();
@@ -19,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
       .query(`
         SELECT 1 FROM QueueItems qi
         JOIN Sessions s ON s.SessionID = qi.SessionID
-        WHERE qi.QueueItemID = @QueueItemID AND s.SessionCode = @SessionCode
+        WHERE qi.QueueItemID = @QueueItemID AND s.SessionCode = @SessionCode AND qi.Status IN ('Queued', 'Playing') AND s.Status IN ('Pending', 'Active', 'Paused')
       `);
 
     if (itemCheck.recordset.length === 0) {
@@ -28,7 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
 
     await pool.request()
       .input('QueueItemID', queueItemID)
-      .input('UserID', userID)
+      .input('UserID', user.UserID)
       .query(`
         INSERT INTO Votes (QueueItemID, UserID, VoteType, VoteValue)
         VALUES (@QueueItemID, @UserID, 'up', 1)

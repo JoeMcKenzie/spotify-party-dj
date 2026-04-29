@@ -48,25 +48,7 @@ export default function JoinSessionClient({ username }: JoinSessionClientProps) 
     setLoading('host');
     setError('');
 
-    try {
-      const res = await fetch('/api/sessions/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        setError(json.error || 'Could not create session');
-        return;
-      }
-
-      router.push(`/Jam/${json.data.SessionCode}`);
-    } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setLoading(null);
-    }
+    window.location.href = '/api/spotify/authorize';
   }
 
   const ready = code.length === 5;

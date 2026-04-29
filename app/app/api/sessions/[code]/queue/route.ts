@@ -112,9 +112,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
       `);
 
     const songResult = await pool.request()
-      .input('SongName', song.name)
-      .input('ArtistID', artistID)
-      .query(`SELECT SongID FROM Songs WHERE SongName = @SongName AND ArtistID = @ArtistID`);
+      .input('SpotifyTrackID', song.id)
+      .query(`SELECT SongID FROM Songs WHERE SpotifyTrackID = @SpotifyTrackID`);
 
     const songID = songResult.recordset[0].SongID;
 
@@ -133,7 +132,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
     await pool.request()
       .input('SessionID', session.SessionID)
       .input('SongID', songID)
-      .input('UserID', userID)
+      .input('UserID', user.UserID)
       .input('Position', nextPos)
       .query(`
         INSERT INTO QueueItems (SessionID, SongID, AddedByUserID, Position, Status)
