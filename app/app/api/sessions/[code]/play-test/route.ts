@@ -11,7 +11,7 @@ export async function POST(
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.jsson(
+      return NextResponse.json(
         { success: false, error: 'You must be logged in.' },
         { status: 401 }
       );
@@ -21,7 +21,7 @@ export async function POST(
 
     const tokenResult = await pool
       .request()
-      .input('UserId', user.UserID)
+      .input('UserID', user.UserID)
       .query(`
         SELECT AccessToken
         FROM dbo.UserSpotifyTokens
@@ -87,7 +87,7 @@ export async function POST(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        uris: ['spotify:track:11dFghVXANMlKmJXsNCbNl'],
+        uris: [topSong.SpotifyTrackURI],
       }),
     });
     
@@ -103,20 +103,32 @@ export async function POST(
               ? 'No active Spotify device found. Open Spotify'
               : `Spotify playback failed: ${text}`,
         },
-        { status: spotifyResponse.statuss }
+        { status: spotifyResponse.status }
       );
     }
 
     await pool
       .request()
-      .input
+      .input('SessionID', topSong.SessionID)
       .query(`
+        UPDATE dbo.QueueItems
+        SET
+          Status = 'Played',
+          EndedAt = SYSUTCDATETIME()
+        WHERE SessionID = @SessionID
+          AND Status = 'Playing'
       `);
   
     await pool
       .request()
-      .input()
+      .input('QueueItemID', topSong.QueueItemId)
       .query(`
+        UPDATE dbo.QueueItems
+        SET 
+          Status = 'Playing',
+          StartedAt = SYSUTCDATETIME(),
+          EndedAt = NULL
+        WHERE QueueItemID = @QueueItemID
       `);
     
     return NextResponse.json({
