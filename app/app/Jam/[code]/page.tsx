@@ -87,6 +87,24 @@ export default function JamPage() {
     return () => clearInterval(interval);
   }, [code]);
 
+  useEffect(() => {
+    async function syncPlayback() {
+      try {
+        await fetch(`/api/sessions/${code}/sync-playback`, {
+          method: 'POST',
+        });
+      } catch {
+        // Silent
+      }
+    }
+    
+    syncPlayback();
+
+    const interval = setInterval(syncPlayback, 5000);
+
+    return () => clearInterval(interval);
+  }, [code]);
+
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     setSearch(value);

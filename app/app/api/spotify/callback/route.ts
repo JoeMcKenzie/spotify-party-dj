@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     const cookieState = request.cookies.get('spotify_oauth_state')?.value;
 
-    if (!cookie || !state || state !== cookieState) {
+    if (!code || !state || state !== cookieState) {
       return NextResponse.redirect(new URL('/joinSession?error=spotify_auth_failed', request.url));
     }
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
     ).toString('base64');
 
-    const tokenResponse = await fetch('https://acounts.spotify.com/api/token', {
+    const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: {
         Authorization: `Basic ${basicAuth}`,
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) {
       const text = await tokenResponse.text();
       console.error('Spotify token exchange failed:', text);
-      return NextResponse.redirect(new URL('/oinSession?error=spotify_token_failed', request.url));
+      return NextResponse.redirect(new URL('/joinSession?error=spotify_token_failed', request.url));
     }
 
     const tokenData = await tokenResponse.json();
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const profile = profileResponse.ok ? await profileResponsee.json() : null;
+    const profile = profileResponse.ok ? await profileResponse.json() : null;
     const pool = await getDbPool();
 
     await pool
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       try {
         sessionResult = await pool
           .request()
-          .input('SessinCode', sessionCode)
+          .input('SessionCode', sessionCode)
           .input('SessionName', `${user.Username}'s Jam`)
           .input('CreatedByUserID', user.UserID)
           .execute('dbo.CreateSession');

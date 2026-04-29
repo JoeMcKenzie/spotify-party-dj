@@ -101,14 +101,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
 
     await pool.request()
       .input('SpotifyTrackID', song.id)
+      .input('SpotifyTrackURI', song.spotifyUri)
       .input('SongName', song.name)
       .input('ArtistID', artistID)
       .input('AlbumName', song.album || null)
       .input('DurationSeconds', durationSeconds)
       .query(`
         IF NOT EXISTS (SELECT 1 FROM Songs WHERE SpotifyTrackID = @SpotifyTrackID)
-          INSERT INTO Songs (SpotifyTrackID, SongName, ArtistID, AlbumName, DurationSeconds)
-          VALUES (@SpotifyTrackID, @SongName, @ArtistID, @AlbumName, @DurationSeconds)
+          INSERT INTO Songs (SpotifyTrackID, SpotifyTrackURI, SongName, ArtistID, AlbumName, DurationSeconds)
+          VALUES (@SpotifyTrackID, @SpotifyTrackURI, @SongName, @ArtistID, @AlbumName, @DurationSeconds)
       `);
 
     const songResult = await pool.request()
