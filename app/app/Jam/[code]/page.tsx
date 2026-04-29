@@ -87,23 +87,27 @@ export default function JamPage() {
     return () => clearInterval(interval);
   }, [code]);
 
-  useEffect(() => {
-    async function syncPlayback() {
-      try {
-        await fetch(`/api/sessions/${code}/sync-playback`, {
-          method: 'POST',
-        });
-      } catch {
-        // Silent
+  async function playTestSong() {
+    setError('');
+
+    try {
+      const res = await fetch('/api/sessions/${code}/play-test', {
+        method: 'POST',
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        setError(json.error || 'Failed to play test song');
+        return;
       }
+
+      console.log(json.message);
+    } catch {
+      setError('Something went wrong testing playback.');
     }
-    
-    syncPlayback();
+  }
 
-    const interval = setInterval(syncPlayback, 5000);
-
-    return () => clearInterval(interval);
-  }, [code]);
 
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
@@ -248,6 +252,12 @@ export default function JamPage() {
           <p className="text-xs text-white/30 text-center">No song currently playing</p>
         )}
       </div>
+      <button
+        onClick = {playTestSong}
+        className="mt-3 rounded bg-white text-black px-4 py-2 text-sm font-medium hover:bg-gray-200 transition"
+      >
+        Play Test Song
+      </button>
     </div>
   );
 }

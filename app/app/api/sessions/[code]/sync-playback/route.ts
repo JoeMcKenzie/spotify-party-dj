@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server/;
+import { NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -19,13 +19,13 @@ async function getSpotifyAccessToken(pool: any, userID: number) {
 export async function POST(request: Request, { params }: { params: Promise<{ code: string }> }) {
   try {
     const { code } = await params;
-    const user = await getCurrentUser;
+    const user = await getCurrentUser();
 
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'You must be logged in.' },
         { status: 401 }
-      },
+      );
     }
 
     const pool = await getDbPool();
@@ -34,7 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
       .request()
       .input('SessionCode', code.toUpperCase())
       .input('UserID', user.UserID)
-      .query('
+      .query(`
         SELECT s.SessionID
         FROM dbo.Sessions s
         INNER JOIN dbo.SessionParticipants sp
@@ -106,7 +106,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
           s.SongName,
           a.ArtistName,
           qi.QueuedAt
-        ORDER BY COUNT(v.VoteID) DESC, qi.Queued ASC
+        ORDER BY COUNT(v.VoteID) DESC, qi.QueuedAt ASC
       `);
 
     const nextSong = nextResult.recordset[0];
@@ -136,7 +136,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
 
     return NextResponse.json({
       success: true,
-      action: 'started_next_song;,
+      action: 'started_next_song',
       data: {
         QueueItemID: nextSong.QueueItemID,
         SongName: nextSong.SongName,
@@ -144,7 +144,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
       },
     });
   } catch (error: any) {
-    console.error('Sync playback error:', error):
+    console.error('Sync playback error:', error);
      
     return NextResponse.json(
       { success: false, error: error.message || 'Could not sync playback.' },
