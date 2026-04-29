@@ -10,6 +10,8 @@ const scopes = [
 
 export async function GET() {
   const user = await getCurrentUser();
+
+  console.log('Spotify redirect URI:', process.env.SPOTIFY_REDIRECT_URI);
   
   if (!user) {
     return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
