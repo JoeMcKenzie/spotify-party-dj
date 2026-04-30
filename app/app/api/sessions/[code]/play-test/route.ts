@@ -9,6 +9,8 @@ export async function POST(
   try {
     const { code } = await params;
     const user = await getCurrentUser();
+    const body = await request.json().catch(() => ({}));
+    const deviceId = body.deviceId;
 
     if (!user) {
       return NextResponse.json(
@@ -80,7 +82,13 @@ export async function POST(
       );
     }
 
-    const spotifyResponse = await fetch('https://api.spotify.com/v1/me/player/play', {
+    const spotifyUrl = new URL('https://api.spotify.com/v1/me/player/play');
+
+    if (deviceId) {
+      spotifyUrl.searchParams.set('device_id', deviceId);
+    }
+
+    const spotifyResponse = await fetch(spotifyUrl.toString(), {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${accessToken}`,

@@ -6,6 +6,7 @@ const scopes = [
   'user-read-playback-state',
   'user-modify-playback-state',
   'user-read-currently-playing',
+  'streaming'
 ].join(' ');
 
 export async function GET() {

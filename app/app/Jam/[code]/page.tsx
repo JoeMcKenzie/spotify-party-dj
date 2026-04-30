@@ -2,6 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 
+declare global {
+  interface Window {
+    Spotify: any;
+    onSpotifyWebPlaybackSDKReady: () => void;
+  }
+}
+
 type Song = {
   id: string;
   spotifyUri: string;
@@ -41,6 +48,65 @@ export default function JamPage() {
   const [adding, setAdding] = useState<string | null>(null);
   const [voting, setVoting] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [showHostModal, setShowHostModal] = useState(true);
+
+  const [spotifyDeviceId, SetSpotifyDeviceId] = useState<string | null>(null);
+  const [playerReady, setPlayerReady] = useState(false);
+  const [playerError, setPlayerError] = useState('');
+
+  async function activateBrowserPlayer() {
+    setPlayerError('');
+    setError('');
+
+    try {
+
+      const tokenRes = await fetch('/api/spotify/web-playback-token');
+      const tokenJson = await tokenRes.json();
+
+      if (!tokenRes.ok || !tokenJson.success) {
+        setPlayerError(tokenJson.error || 'Could not get Spotify token.');
+        return;
+      }
+
+      const accessToken = tokenJson.accessToken;
+
+      if (!window.Spotify) {
+        const script = document.createElement('script');
+        script.src = 'https://sdk.scdn.co/spotify-player.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+
+      window.onSpotifyWebPlaybackSDKReady = () => {
+        const player = new window.Spotify.Player({
+          name: 'PartyDJ Browser Player',
+          getOAuthToken: (cb: (token: string) => void) => {
+            cb(accessToken);
+          },
+          volume: 0.8,
+        });
+
+        player.addListener('ready', ({ device_id }: {device_id: string }) => {
+          console.log('Spotify browser device ready:', device_id);
+          setSpotifyDeviceId(device_id);
+          setPlayerReady(true);
+        });
+
+        player.connect().then((success: boolean) => {
+          if (!success) {
+            setPlayerError('Spotify browser player failed to connect.');
+          }
+        });
+      };
+
+      if (window.Spotify) {
+        window.onSpotifyWebPlaybackSDKReady();
+      }
+ 
+    } catch {
+      setPlayerError('Could not activate Spotify browser player.');
+    };
+  }
 
   useEffect(() => {
     const query = search.trim();
@@ -87,12 +153,24 @@ export default function JamPage() {
     return () => clearInterval(interval);
   }, [code]);
 
+  async function handleGetStarted() {
+    setShowHostModal(false);
+    await activateBrowserPlayer();
+  }
+
   async function playTestSong() {
     setError('');
+
+    if (!spotifyDeviceId) {
+      setError('Activate the Spotify browser player first.');
+      return;
+    }
 
     try {
       const res = await fetch(`/api/sessions/${code}/play-test`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: spotifyDeviceId }),
       });
 
       const json = await res.json();
@@ -167,7 +245,35 @@ export default function JamPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
 
-      {}
+      {showHostModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 text-black shadow-xl">
+            <h2 className="text-2xl font-bold">You're the host!</h2>
+            
+            <p className="mt-3 text-sm text-gray-600">
+              Share this Jam Code with your friends to start the party.
+            </p>
+
+            <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-5 text-center">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                Jam Code
+              </p>
+              <p className="mt-2 text-4xl font-bold tracking-widest">
+                {code}
+              </p>
+            </div>
+            <button
+              onClick={handleGetStarted}
+              className="mt-6 w-full rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+            >
+              Get Started
+            </button>
+            <p className="mt-3 text-xs text-gray-500">
+              This also actives this tab as the Spotify playback device.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-4 px-6 py-4 border-b border-white/10">
         <input
           className="flex-1 bg-transparent border border-white/30 rounded px-4 py-2 text-sm placeholder-white/40 focus:outline-none focus:border-white/60"
