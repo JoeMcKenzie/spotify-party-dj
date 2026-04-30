@@ -9,13 +9,21 @@ export async function POST(
   try {
     const { code } = await params;
     const user = await getCurrentUser();
-    const body = await request.json().catch(() => ({}));
-    const deviceId = body.deviceId;
 
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'You must be logged in.' },
         { status: 401 }
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const deviceId = body.deviceId;
+
+    if (!deviceId) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Spotify device ID.' },
+        { status: 400 }
       );
     }
 
@@ -40,9 +48,70 @@ export async function POST(
       );
     }
 
-    const topSongResult = await pool
+    const sessionResult = await pool
       .request()
       .input('SessionCode', code.toUpperCase())
+      .query(`
+        SELECT SessionID
+        FROM dbo.Sessions
+        WHERE SessionCode = @SessionCode
+          AND Status IN ('Pending', 'Active', 'Paused')
+      `);
+      
+    const session = sessionResult.recordset[0];
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Session not found.' },
+        { status: 404 }
+      );
+    }
+
+    await pool
+      .request()
+      .input('SessionID', session.SessionID)
+      .query(`
+        UPDATE qi
+        SET
+          qi.Status = 'Played',
+          qi.EndedAt = SYSUTCDATETIME()
+        FROM dbo.QueueItems qi
+        INNER JOIN dbo.Songs s
+          ON s.SongID = qi.SongID
+        WHERE qi.SessionID = @SessionID
+          AND qi.Status = 'Playing'
+          AND qi.StartedAt IS NOT NULL
+          AND DATEADD(SECOND, s.DurationSeconds, qi.StartedAt) < SYSUTCDATETIME()
+      `);
+
+    const currentResult = await pool
+      .request()
+      .input('SessionID', session.SessionID)
+      .query(`
+        SELECT TOP 1
+          qi.QueueItemID,
+          s.SongName,
+          a.ArtistName
+        FROM dbo.QueueItems qi
+        INNER JOIN dbo.Songs s ON s.SongID = qi.SongID
+        INNER JOIN dbo.Artists a ON a.ArtistID = s.ArtistID
+        WHERE qi.SessionID = @SessionID
+          AND qi.Status = 'Playing'
+      `);
+
+    const currentSong = currentResult.recordset[0];
+
+    if (currentSong) {
+      return NextResponse.json({
+        success: true,
+        action: 'still_playing',
+        data: currentSong,
+      });
+    }
+
+    const topSongResult = await pool
+      .request()
+      .input('SessionID', session.SessionID)
       .query(`
         SELECT TOP 1
           qi.QueueItemID,
@@ -52,15 +121,10 @@ export async function POST(
           a.ArtistName,
           COUNT(v.VoteID) AS VoteCount
         FROM dbo.QueueItems qi
-        INNER JOIN dbo.Sessions js
-          ON js.SessionID = qi.SessionID
-        INNER JOIN dbo.Songs s
-          ON s.SongID = qi.SongID
-        INNER JOIN dbo.Artists a
-          ON a.ArtistID = s.ArtistID
-        LEFT JOIN dbo.Votes v
-          ON v.QueueItemID = qi.QueueItemID
-        WHERE js.SessionCode = @SessionCode
+        INNER JOIN dbo.Songs s ON s.SongID = qi.SongID
+        INNER JOIN dbo.Artists a ON a.ArtistID = s.ArtistID
+        LEFT JOIN dbo.Votes v ON v.QueueItemID = qi.QueueItemID
+        WHERE qi.SessionID = @SessionID
           AND qi.Status = 'Queued'
           AND s.SpotifyTrackURI IS NOT NULL
         GROUP BY
@@ -83,10 +147,7 @@ export async function POST(
     }
 
     const spotifyUrl = new URL('https://api.spotify.com/v1/me/player/play');
-
-    if (deviceId) {
-      spotifyUrl.searchParams.set('device_id', deviceId);
-    }
+    spotifyUrl.searchParams.set('device_id', deviceId);
 
     const spotifyResponse = await fetch(spotifyUrl.toString(), {
       method: 'PUT',

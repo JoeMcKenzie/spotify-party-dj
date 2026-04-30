@@ -50,7 +50,7 @@ export default function JamPage() {
   const [error, setError] = useState('');
   const [showHostModal, setShowHostModal] = useState(true);
 
-  const [spotifyDeviceId, SetSpotifyDeviceId] = useState<string | null>(null);
+  const [spotifyDeviceId, setSpotifyDeviceId] = useState<string | null>(null);
   const [playerReady, setPlayerReady] = useState(false);
   const [playerError, setPlayerError] = useState('');
 
@@ -107,6 +107,44 @@ export default function JamPage() {
       setPlayerError('Could not activate Spotify browser player.');
     };
   }
+
+  async function playTopSongAutomatically() {
+    if (!spotifyDeviceId || !playerReady) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/sessions/${code}/play-test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: spotifyDeviceId }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.successs) {
+        console.error('Auto play failed:', json);
+        setError(json.error || 'Auto play failed');
+        return;
+      }
+
+      console.log('Auto play result:', json);
+    } catch (err) {
+      console.error('Auto play request failed:', err);
+    }
+  }
+
+  useEffect(() => {
+    if (!playerReady || !spotifyDeviceId) {
+      return;
+    }
+
+    playTopSongAutomatically();
+
+    const interval = setInterval(playTopSongAutomatically, 5000);
+ 
+    return () => clearInterval(interval);
+  }, [playerReady, spotifyDeviceId, code]);
 
   useEffect(() => {
     const query = search.trim();

@@ -17,7 +17,7 @@ export async function GET() {
 
     const result = await pool
       .request()
-      .input('UserID', UserID)
+      .input('UserID', user.UserID)
       .query(`
         SELECT AccessToken
         FROM dbo.UserSpotifyTokens
