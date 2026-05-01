@@ -19,17 +19,39 @@ export async function GET() {
       .request()
       .input('UserID', user.UserID)
       .query(`
+        WITH UserVotesCast AS (
+          SELECT
+            COUNT(v.VoteID) AS TotalVotes,
+            CAST(
+              COUNT(v.VoteID) * 1.0 /
+              NULLIF(COUNT(DISTINCT qi.SessionID), 0)
+              AS DECIMAL(10,2)
+            ) AS AverageSessionVotes
+          FROM dbo.Votes v
+          INNER JOIN dbo.QueueItems qi
+            ON qi.QueueItemID = v.QueueItemID
+          WHERE v.UserID = @UserID
+        ),
+        VotesReceivedBySession AS (
+          SELECT 
+            qi.SessionID,
+            COUNT(v.VoteID) AS VotesReceived
+          FROM dbo.QueueItems qi
+          LEFT JOIN dbo.Votes v
+            ON v.QueueItemID = qi.QueueItemID
+          WHERE qi.AddedByUserID = @UserID
+          GROUP BY qi.SessionID
+        )
         SELECT
-          COUNT(v.VoteID) AS TotalVotes,
-          CAST(
-            COUNT(v.VoteID) * 1.0 /
-            NULLIF(COUNT(DISTINCT qi.SessionID), 0)
-            AS DECIMAL(10,2)
-          ) AS AverageSessionVotes
-        FROM dbo.Votes v
-        INNER JOIN dbo.QueueItems qi
-          ON qi.QueueItemID = v.QueueItemID
-        WHERE v.UserID = @UserID
+          uvc.TotalVotes,
+          uvc.AverageSessionVotes,
+          ISNULL(MAX(vrbs.VotesReceived), 0) AS MaxVotesReceivedSingleSession
+        FROM UserVotesCast uvc
+        LEFT JOIN VotesReceivedBySession vrbs
+          ON 1 = 1
+        GROUP BY
+          uvc.TotalVotes,
+          uvc.AverageSessionVotes
       `);
 
     return NextResponse.json({

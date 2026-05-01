@@ -15,6 +15,7 @@ type TopQueuedSong = {
 type PersonalStats = {
   TotalVotes: number;
   AverageSessionVotes: number | null;
+  MaxVotesReceivedSingleSession: number;
 };
 
 type SessionAnalysis = {
@@ -285,7 +286,7 @@ export default function JoinSessionClient({ username }: JoinSessionClientProps) 
             {personalStatsLoading ? (
               <p className="mt-2 text-sm text-gray-500">Loading stats...</p>
             ) : (
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-gray-100 p-4">
                   <p className="text-xs uppercase tracking-wide text-gray-500">
                     Total Votes
@@ -301,6 +302,15 @@ export default function JoinSessionClient({ username }: JoinSessionClientProps) 
                   </p>
                   <p className="mt-2 text-2xl font-bold">
                     {personalStats?.AverageSessionVotes ?? 0}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-gray-100 p-4">
+                  <p className="text-xs uppercase tracking wide text-gray-500">
+                    Max / Session
+                  </p>
+                  <p className="mt-2 text-2xl font-bold">
+                    {personalStats?.MaxVotesReceivedSingleSession ?? 0}
                   </p>
                 </div>
               </div>
@@ -486,6 +496,24 @@ export default function JoinSessionClient({ username }: JoinSessionClientProps) 
               </p>
               <p className="mt-2 text-2xl font-bold">
                 {sessionAnalysis.TotalSongsPlayed}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-gray-100 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                Total Playbaack
+              </p>
+              <p className="mt-2 text-2xl font-bold">
+                {formatSeconds(sessionAnalysis.TotalPlaybackDurationSeconds)}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-gray-100 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                Avg Song Length
+              </p>
+              <p className="mt-2 text-2xl font-bold">
+                {formatSeconds(sessionAnalysis.AverageSongLengthSeconds)}
               </p>
             </div>
           </div>
