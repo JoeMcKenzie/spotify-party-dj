@@ -17,6 +17,12 @@ type PersonalStats = {
   AverageSessionVotes: number | null;
 };
 
+type SessionAnalysis = {
+  TotalSongsPlayed: number;
+  TotalPlaybackDurationSeconds: number;
+  AverageSongLengthSeconds: number;
+};
+
 type ArtistAnalysisRow = {
   ArtistName: string;
   SongQueued: number;
@@ -39,6 +45,11 @@ export default function JoinSessionClient({ username }: JoinSessionClientProps) 
   const [artistRows, setArtistRows] = useState<ArtistAnalysisRow[]>([]);
   const [artistLoading, setArtistLoading] = useState(false);
   const [artistError, setArtistError] = useState('');
+
+  const [sessionAnalysisCode, setSessionAnalysisCode] = useState('');
+  const [sessionAnalysis, setSessionAnalysis] = useState<SessionAnalysis | null>(null);
+  const [sessionAnalysisLoading, setSessionAnalysisLoading] = useState(false);
+  const [sessionAnalysisError, setSessionAnalysisError] = useState('');
 
   const router = useRouter();
 
@@ -86,6 +97,37 @@ export default function JoinSessionClient({ username }: JoinSessionClientProps) 
 
     fetchPersonalStats();
   }, []);
+
+  async function fetchSessionAnalysis() {
+    setSessionAnalysisLoading(true);
+    setSessionAnalysisError('');
+    setSessionAnalysis(null);
+
+    try {
+      const cleanedCode = sessionAnalysisCode.trim().toUpperCase();
+ 
+      if (!cleanedCode) {
+        setSessionAnalysisError('Enter a session code.');
+        return;
+      }
+
+      const res = await fetch(
+        `/api/stats/session?sessionCode=${encodeURIComponent(cleanedCode)}`
+      );
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        setSessisonAnalysisError(json.error || 'Failed to load session analysis.');
+        return;
+      }
+
+      setSessionAnalysis(json.data);
+    } catch {
+      setSessionAnalysisError('Something went wrong loading session analysis.');
+    } finally {
+      setSessionAnalysisLoading(false);
+    }
+  }
 
   async function handleJoin() {
     setLoading('join');
@@ -402,17 +444,52 @@ export default function JoinSessionClient({ username }: JoinSessionClientProps) 
       </section>
 
       <section className="mx-auto mt-6 max-w-6xl rounded-2xl bg-white p-6 shadow-md">
-        <h2 className="text-xl font-semibold">Song Analysis</h2>
-        <p className="mt-2 text-sm text-gray-500">
-          Song insights will appear here.
-        </p>
-      </section>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Session Analysis</h2>
+            <p className="mt-2 text-sm text-gray-500">
+              Session insights will appear here.
+            </p>
+          </div>
 
-      <section className="mx-auto mt-6 max-w-6xl rounded-2xl bg-white p-6 shadow-md">
-        <h2 className="text-xl font-semibold">Session Analysis</h2>
-        <p className="mt-2 text-sm text-gray-500">
-          Session insights will appear here.
-        </p>
+          <div className="flex gap-3">
+            <input
+              value={sessionAnalysisCode}
+              onChange={(e) =>
+                setSessionAnalysisCode(
+                  e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5)
+                )
+              }
+              maxLength={5}
+              placeholder="XXXXX"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-center text-sm tracking-widest"
+            />
+             
+            <button
+              onClick={fetchSessionAnalysis}
+              disabled={sessionAnalysisLoading || sessionAnalysisCode.length !== 5}
+              className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            >
+              {sessionAnalysisLoading ? 'Loading...' : 'Analyze'}
+            </button>
+          </div>
+        </div>
+        {sessionAnalysisError && (
+          <p className="mt-4 text-sm text-red-500">{sessionAnalysisError}</p>
+        )}
+
+        {sessionAnalysis && (
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-gray-100 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                Songs Played
+              </p>
+              <p className="mt-2 text-2xl font-bold">
+                {sessionAnalysis.TotalSongsPlayed}
+              </p>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );
