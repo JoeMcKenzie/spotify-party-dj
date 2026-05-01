@@ -140,10 +140,10 @@ export async function POST(
     const topSong = topSongResult.recordset[0];
 
     if (!topSong) {
-      return NextResponse.json(
-        { success: false, error: 'No queued songs with a Spotify URI to play.' },
-        { status: 404 }
-      );
+      return NextResponse.json({
+        success: true,
+        action: 'nothing_to_play',
+      });
     }
 
     const spotifyUrl = new URL('https://api.spotify.com/v1/me/player/play');

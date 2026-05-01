@@ -48,7 +48,8 @@ export default function JamPage() {
   const [adding, setAdding] = useState<string | null>(null);
   const [voting, setVoting] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const [showHostModal, setShowHostModal] = useState(true);
+  const [showHostModal, setShowHostModal] = useState(false);
+  const [isHost, setIsHost] = useState(false);
 
   const [spotifyDeviceId, setSpotifyDeviceId] = useState<string | null>(null);
   const [playerReady, setPlayerReady] = useState(false);
@@ -108,6 +109,24 @@ export default function JamPage() {
     };
   }
 
+  useEffect(() => {
+    async function checkRole() {
+      try {
+        const res = await fetch(`/api/sessions/${code}/me`);
+        const json = await res.json();
+
+        if (json.success && json.data?.Role === 'Host') {
+          setIsHost(true);
+          setShowHostModal(true);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    checkRole();
+  }, [code]);
+
   async function playTopSongAutomatically() {
     if (!spotifyDeviceId || !playerReady) {
       return;
@@ -122,9 +141,19 @@ export default function JamPage() {
 
       const json = await res.json();
 
-      if (!res.ok || !json.successs) {
+      if (!res.ok || !json.success) {
         console.error('Auto play failed:', json);
         setError(json.error || 'Auto play failed');
+        return;
+      }
+
+      if (json.action === 'nothing_to_play') {
+        console.log('Auto play: nothing queued');
+        return;
+      }
+
+      if (json.action === 'still_playing') {
+        console.log('Auto play: still playing');
         return;
       }
 
@@ -283,7 +312,7 @@ export default function JamPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
 
-      {showHostModal && (
+      {isHost && showHostModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 text-black shadow-xl">
             <h2 className="text-2xl font-bold">You're the host!</h2>
@@ -396,12 +425,6 @@ export default function JamPage() {
           <p className="text-xs text-white/30 text-center">No song currently playing</p>
         )}
       </div>
-      <button
-        onClick = {playTestSong}
-        className="mt-3 rounded bg-white text-black px-4 py-2 text-sm font-medium hover:bg-gray-200 transition"
-      >
-        Play Test Song
-      </button>
     </div>
   );
 }
