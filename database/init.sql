@@ -158,3 +158,79 @@ BEGIN
   WHERE Username = @Username;
 END;
 GO
+
+INSERT INTO Users (Username, PasswordHash, FirstName, LastName, DisplayName) VALUES
+('djmike',    'hash_abc123', 'Mike',    'Torres',   'DJ Mike'),
+('sarahk',    'hash_def456', 'Sarah',   'Kim',      'Sarah K'),
+('beat_luca', 'hash_ghi789', 'Luca',    'Mancini',  'Luca Beats'),
+('nova_jay',  'hash_jkl012', 'Jasmine', 'Okafor',   'Nova Jay'),
+('tomwaves',  'hash_mno345', 'Tom',     'Walsh',     'Tomwaves');
+GO
+
+INSERT INTO Artists (ArtistName, SpotifyArtistID) VALUES
+('Daft Punk',       '4tZwfgrHOc3mvqYlEYSvVi'),
+('Kendrick Lamar',  '2YZyLoL8N0Wb9xBt1NhZWg'),
+('Tame Impala',     '5INjqkS1o8h1imAzPqGZng'),
+('Billie Eilish',   '6qqNVTkY8uBg9cP3Jd7DAH'),
+('Doja Cat',        '5cj0lLjcoR7YOSnhnX0Po5');
+GO
+
+INSERT INTO Songs (SpotifyTrackID, SongName, ArtistID, AlbumName, DurationSeconds, IsExplicit) VALUES
+('track_001', 'Get Lucky',            1, 'Random Access Memories', 248, 0),
+('track_002', 'One More Time',        1, 'Discovery',              321, 0),
+('track_003', 'HUMBLE.',              2, 'DAMN.',                  177, 1),
+('track_004', 'DNA.',                 2, 'DAMN.',                  185, 1),
+('track_005', 'The Less I Know',      3, 'Currents',               216, 0),
+('track_006', 'Let It Happen',        3, 'Currents',               467, 0),
+('track_007', 'bad guy',              4, 'When We All Fall Asleep',194, 0),
+('track_008', 'Happier Than Ever',    4, 'Happier Than Ever',      295, 0),
+('track_009', 'Say So',               5, 'Hot Pink',               238, 0),
+('track_010', 'Woman',                5, 'Planet Her',             212, 0);
+GO
+
+INSERT INTO Sessions (SessionCode, SessionName, CreatedByUserID, StartedAt, Status) VALUES
+('PRTY-001', 'Friday Night Kickback', 1, '2025-04-25 21:00:00', 'Active'),
+('PRTY-002', 'Rooftop Session',       2, '2025-04-26 20:00:00', 'Ended'),
+('PRTY-003', 'Chill Sunday Vibes',    3, NULL,                  'Pending'),
+('PRTY-004', 'Office Happy Hour',     1, '2025-04-25 17:00:00', 'Cancelled');
+GO
+
+INSERT INTO SessionParticipants (SessionID, UserID, Role, LeftAt) VALUES
+(1, 1, 'Host',        NULL),
+(1, 2, 'Participant', NULL),
+(1, 3, 'Participant', NULL),
+(1, 4, 'Guest',       NULL),
+(2, 2, 'Host',        '2025-04-26 23:00:00'),
+(2, 1, 'Participant', '2025-04-26 23:00:00'),
+(2, 5, 'Guest',       '2025-04-26 22:30:00'),
+(3, 3, 'Host',        NULL),
+(3, 4, 'Participant', NULL),
+(4, 1, 'Host',        '2025-04-25 17:30:00');
+GO
+
+INSERT INTO QueueItems (SessionID, SongID, AddedByUserID, Position, Status, StartedAt, EndedAt) VALUES
+(1, 1, 1, 1, 'Played',   '2025-04-25 21:01:00', '2025-04-25 21:05:08'),
+(1, 3, 2, 2, 'Played',   '2025-04-25 21:05:08', '2025-04-25 21:08:05'),
+(1, 7, 3, 3, 'Playing',  '2025-04-25 21:08:05', NULL),
+(1, 5, 4, 4, 'Queued',   NULL,                  NULL),
+(1, 9, 2, 5, 'Queued',   NULL,                  NULL),
+(2, 2, 2, 1, 'Played',   '2025-04-26 20:02:00', '2025-04-26 20:07:21'),
+(2, 6, 1, 2, 'Played',   '2025-04-26 20:07:21', '2025-04-26 20:15:08'),
+(2, 8, 5, 3, 'Played',   '2025-04-26 20:15:08', '2025-04-26 20:20:03'),
+(3, 10, 3, 1, 'Queued',  NULL,                  NULL),
+(3, 4,  4, 2, 'Queued',  NULL,                  NULL);
+GO
+
+INSERT INTO Votes (QueueItemID, UserID, VoteType, VoteValue) VALUES
+(1, 2, 'Upvote',   1),
+(1, 3, 'Upvote',   1),
+(1, 4, 'Downvote', -1),
+(2, 1, 'Upvote',   1),
+(2, 4, 'Upvote',   1),
+(3, 2, 'Upvote',   1),
+(3, 3, 'Downvote', -1),
+(4, 1, 'Upvote',   1),
+(4, 2, 'Upvote',   1),
+(4, 3, 'Upvote',   1),
+(9, 4, 'Upvote',   1);
+GO
