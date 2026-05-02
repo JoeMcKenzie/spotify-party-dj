@@ -310,7 +310,7 @@ export default function JamPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen bg-white text-black flex flex-col">
 
       {isHost && showHostModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
@@ -331,7 +331,7 @@ export default function JamPage() {
             </div>
             <button
               onClick={handleGetStarted}
-              className="mt-6 w-full rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+              className="mt-6 w-full rounded-lg bg-black px-4 py-3 text-sm font-medium text-black transition hover:bg-gray-800"
             >
               Get Started
             </button>
@@ -341,14 +341,14 @@ export default function JamPage() {
           </div>
         </div>
       )}
-      <div className="flex items-center gap-4 px-6 py-4 border-b border-white/10">
+      <div className="flex items-center gap-4 px-6 py-4 border-b border-black/10">
         <input
-          className="flex-1 bg-transparent border border-white/30 rounded px-4 py-2 text-sm placeholder-white/40 focus:outline-none focus:border-white/60"
+          className="flex-1 bg-transparent border border-black/30 rounded px-4 py-2 text-sm placeholder-white/40 focus:outline-none focus:border-access/60"
           placeholder="Search for songs..."
           value={search}
           onChange={handleSearch}
         />
-        <div className="border border-white/30 rounded px-4 py-2 text-sm font-mono tracking-widest whitespace-nowrap">
+        <div className="border border-black/30 rounded px-4 py-2 text-sm font-mono tracking-widest whitespace-nowrap">
           {code}
         </div>
       </div>
@@ -359,20 +359,20 @@ export default function JamPage() {
       <div className="flex flex-1 overflow-hidden">
 
         {}
-        <div className="w-56 border-r border-white/10 flex flex-col">
-          <p className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+        <div className="w-56 border-r border-black/10 flex flex-col">
+          <p className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-black/40">
             Queue
           </p>
           <div className="flex-1 overflow-y-auto">
             {queue.length === 0 ? (
-              <p className="px-4 py-3 text-xs text-white/30">No songs queued yet</p>
+              <p className="px-4 py-3 text-xs text-black/30">No songs queued yet</p>
             ) : (
               queue.map((song) => (
-                <div key={song.QueueItemID} className="flex items-center gap-2 px-4 py-3 border-b border-white/5 hover:bg-white/5">
+                <div key={song.QueueItemID} className="flex items-center gap-2 px-4 py-3 border-b border-black/5 hover:bg-black/5">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{song.SongName}</p>
-                    <p className="text-xs text-white/50 truncate">{song.ArtistName}</p>
-                    <p className="text-xs text-white/30 truncate">by {song.AddedBy}</p>
+                    <p className="text-xs text-black/50 truncate">{song.ArtistName}</p>
+                    <p className="text-xs text-black/30 truncate">by {song.AddedBy}</p>
                   </div>
                   <button
                     onClick={() => vote(song.QueueItemID)}
@@ -391,18 +391,18 @@ export default function JamPage() {
         {}
         <div className="flex-1 flex flex-col overflow-hidden">
           {results.length > 0 && (
-            <div className="border border-white/10 m-6 rounded overflow-hidden">
+            <div className="border border-black/10 m-6 rounded overflow-hidden">
               {results.map((song) => (
                 <div
                   key={song.id}
-                  className="flex items-center justify-between px-4 py-3 border-b border-white/5 hover:bg-white/5 cursor-pointer"
+                  className="flex items-center justify-between px-4 py-3 border-b border-black/5 hover:bg-white/5 cursor-pointer"
                   onClick={() => addToQueue(song)}
                 >
                   <div>
                     <p className="text-sm font-medium">{song.name}</p>
-                    <p className="text-xs text-white/50">{song.artist} &mdash; {song.album}</p>
+                    <p className="text-xs text-black/50">{song.artist} &mdash; {song.album}</p>
                   </div>
-                  <span className="text-xs text-white/40">
+                  <span className="text-xs text-black/40">
                     {adding === song.id ? 'Adding...' : song.duration}
                   </span>
                 </div>
@@ -413,16 +413,16 @@ export default function JamPage() {
       </div>
 
       {}
-      <div className="border-t border-white/10 px-6 py-4">
+      <div className="border-t border-black/10 px-6 py-4">
         {currentSong ? (
           <div>
             <p className="text-sm font-semibold">{currentSong.SongName}</p>
-            <p className="text-xs text-white/50">
+            <p className="text-xs text-black/50">
               {currentSong.ArtistName} &mdash; {formatDuration(currentSong.DurationSeconds)}
             </p>
           </div>
         ) : (
-          <p className="text-xs text-white/30 text-center">No song currently playing</p>
+          <p className="text-xs text-black/30 text-center">No song currently playing</p>
         )}
       </div>
     </div>
