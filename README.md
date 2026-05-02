@@ -1,6 +1,8 @@
 # spotify-party-dj
+Require To Run:
+You need to install NPM, Docker Desktop, and you need some database manager
 
-When using the project for the first time setup run these commands 
+When using the project for the first time setup run these commands:
 
 1) docker compose up -d           <-- starts docker database >
 2) cd app                         <-- cd into the app/app folder  >
