@@ -1,0 +1,18 @@
+USE PartyDJ;
+GO
+
+IF OBJECT_ID('dbo.Songs', 'U') IS NULL
+BEGIN
+  CREATE TABLE Songs (
+    SongID BIGINT NOT NULL IDENTITY(1,1)  CONSTRAINT PK_Songs PRIMARY KEY,
+    SpotifyTrackID NVARCHAR(64) NULL CONSTRAINT UQ_Songs_SpotifyTrackID UNIQUE,
+    SpotifyTrack URI NVARCHAR(255) NULL,
+    SongName NVARCHAR(255) NOT NULL,
+    ArtistID BIGINT NOT NULL CONSTRAINT FK_Songs_Artists_ArtistID REFERENCES Artists(ArtistID),
+    AlbumName NVARCHAR(255) NULL,
+    DurationSeconds INT NOT NULL CONSTRAINT CK_Songs_DurationSeconds CHECK (DurationSeconds > 0),
+    IsExplicit BIT NOT CONSTRAINT DF_Songs_IsExplicit DEFAULT 0,
+    CreatedAt DATETIME2(3) NOT NULL CONSTRAINT DF_Songs_CreatedAt DEFAULT SYSUTCDATETIME()
+  );
+END;
+GO

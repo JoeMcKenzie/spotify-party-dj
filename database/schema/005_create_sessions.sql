@@ -16,15 +16,8 @@ BEGIN
 
     CONSTRAINT PK_Sessions PRIMARY KEY (SessionID),
     CONSTRAINT UQ_Sessions_SessionCode UNIQUE (SessionCode),
-
     CONSTRAINT FK_Sessions_CreatedByUser
       FOREIGN KEY (CreatedByUserID) REFERENCES dbo.Users(UserID),
-    
-    CONSTRAINT FK_Sessions_HostUser
-      FOREIGN KEY (HostUserID) REFERENCES dbo.Users(UserID),
-
-    CONSTRAINT CK_Sessions_Status
-      CHECK (Status IN ('Active', 'Ended'))
   );
 END;
 GO
