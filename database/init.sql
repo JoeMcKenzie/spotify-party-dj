@@ -422,7 +422,7 @@ INSERT INTO dbo.Songs (SpotifyTrackID, SongName, ArtistID, AlbumName, DurationSe
 ('track_031', 'Anti-Hero',                     13,  'Midnights',              200, 0),
 ('track_032', 'Shake It Off',                  13,  '1989',                   219, 0),
 ('track_033', 'Cruel Summer',                  13,  'Lover',                  178, 0),
-('track_034', 'Circles',                       14,  "Hollywood's Bleeding",   215, 0),
+('track_034', 'Circles',                       14,  'Hollywood Bleeding',   215, 0),
 ('track_035', 'Sunflower',                     14,  'Hollywood Bleeding',     158, 0),
 ('track_036', 'Seven Rings',                   15,  'Thank U Next',           178, 1),
 ('track_037', 'Thank U Next',                  15,  'Thank U Next',           207, 0),
@@ -434,7 +434,7 @@ INSERT INTO dbo.Songs (SpotifyTrackID, SongName, ArtistID, AlbumName, DurationSe
 ('track_043', 'MIDDLE CHILD',                  18,  'KOD',                    222, 1),
 ('track_044', 'Good as Hell',                  19,  'Cuz I Love You',         162, 0),
 ('track_045', 'Juice',                         19,  'Cuz I Love You',         182, 0),
-('track_046', 'As It Was',                     20,  "Harry's House",          167, 0),
+('track_046', 'As It Was',                     20,  'Harry House',          167, 0),
 ('track_047', 'Watermelon Sugar',              20,  'Fine Line',              174, 0),
 ('track_048', 'Drivers License',               21,  'SOUR',                   242, 0),
 ('track_049', 'Good 4 U',                      21,  'SOUR',                   178, 0),
@@ -745,7 +745,6 @@ INSERT INTO dbo.QueueItems (SessionID, SongID, AddedByUserID, Position, QueuedAt
 (29, 58, 25, 3, '2025-04-21 10:03:00', N'Played',  '2025-04-21 10:13:14', '2025-04-21 10:18:57');
 GO
 
-<<<<<<< HEAD
 -- =============================================
 -- VOTES (136 rows)
 -- =============================================
@@ -910,7 +909,7 @@ INSERT INTO dbo.Votes (QueueItemID, UserID, CreatedAt) VALUES
 (96, 25, '2025-04-21 10:06:45'),
 (97, 36, '2025-04-21 10:13:20');
 GO
-=======
+
 -- Votes
 INSERT INTO dbo.Votes (QueueItemID, UserID, CreatedAt) VALUES
 (1,  2, '2025-03-14 21:01:30'),
